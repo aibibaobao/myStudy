@@ -1,0 +1,1 @@
+console.log('test.js for test project')

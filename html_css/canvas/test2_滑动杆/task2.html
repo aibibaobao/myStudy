@@ -1,0 +1,113 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas</title>
+    <style type="text/css">
+    body{
+        background: #555;
+    }
+    #scale-controller{
+        display: block;
+        width: 400px; 
+        margin: 20px auto;
+    }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" style="border: 1px solid #ccc; display: block; margin: 50px auto;"></canvas>
+    <input type="range" max='3' min="0.5" step="0.01" value="1" id='scale-controller'>
+    <canvas id="watermark" style="display: none;"></canvas>
+    <canvas id="offcanvas"></canvas>
+<script type="text/javascript">
+    window.onload = function(){
+        myNameSpace.init();  
+    }
+    var myNameSpace = {};
+    myNameSpace.canvas = document.getElementById('canvas');
+
+    // 初始化画布
+    myNameSpace.init = function(){  
+        let canvas = this.canvas;
+        this.context = canvas.getContext('2d');
+        canvas.width = 450;
+        canvas.height = 300;
+        this.displayPic(1);
+        let slider = this.slider = document.getElementById('scale-controller');
+        // 滑动杆鼠标按下时，绑定鼠标移动事件，释放时，移除事件，降低消耗
+        slider.onmousedown = function(){ 
+            slider.addEventListener('mousemove', myNameSpace.sliderMove);
+        }
+        slider.onmouseup = function(){
+            slider.removeEventListener('mousemove', myNameSpace.sliderMove);
+        } 
+        // 添加水印
+        myNameSpace.drwaWatermark();
+
+        // 给canvas绑定鼠标事件
+        canvas.onmousedown = myNameSpace.openMagnifier;
+        canvas.onmouseout = canvas.onmouseup = myNameSpace.closeMagnifier;
+
+    };
+    // 获取鼠标在画布上的位置
+    myNameSpace.mousePosition = function(clientX, clientY){
+        var box = this.canvas.getBoundingClientRect();
+        let offsetX = clientX - box.left, offsetY = clientY - box.top;
+        return {x: offsetX, y: offsetY};
+    }
+    // canvas 鼠标按下事件
+    myNameSpace.openMagnifier = function(event){
+        event.preventDefault();
+        let point = myNameSpace.mousePosition(event.clientX, event.clientY);
+        myNameSpace.canvas.addEventListener('mousemove', myNameSpace.followMagnifier);
+    };
+    // canvas 鼠标在左键按下时移动
+    myNameSpace.followMagnifier = function(event){
+        event.preventDefault();
+        let point = myNameSpace.mousePosition(event.clientX, event.clientY);
+        console.log(point.x, 'xxx', point.y);
+    }
+    myNameSpace.closeMagnifier = function(event){
+        event.preventDefault();
+        myNameSpace.canvas.removeEventListener('mousemove', myNameSpace.followMagnifier);
+    }
+    // 处理滑动杆值变
+    myNameSpace.sliderMove = function(){  
+        var scale = myNameSpace.slider.value;
+        myNameSpace.displayPic(scale);
+    }
+
+    // 根据当前slider值，改变图片放大的效果
+    myNameSpace.displayPic = function(scale){ 
+        let canvas = this.canvas, context = this.context;
+        
+        var picObj = new Image();
+        var waterCanvas = document.getElementById('watermark');
+        picObj.onload = function(){
+            let picWid = picObj.width*scale, picHei = picObj.height*scale;
+            let sx = (canvas.width - picWid)/2, sy = (canvas.height - picHei)/2;
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(picObj, sx, sy, scale*canvas.width, scale*canvas.height);
+
+            context.drawImage(waterCanvas, canvas.width-waterCanvas.width, canvas.height - waterCanvas.height);
+        }
+        picObj.src = 'pic1.jpg';
+    };
+
+    // 添加水印
+    myNameSpace.drwaWatermark = function(){
+        let watercvs = document.getElementById('watermark');
+        watercvs.width = 150;
+        watercvs.height = 40;
+        let watercxt = watercvs.getContext('2d');
+        watercxt.font = 'bold 20px Arial';
+        watercxt.fillStyle = "rgba(255, 255, 255, 0.5)"
+        watercxt.textBaseline = 'middle';
+        watercxt.textAlign = 'center';
+        watercxt.fillText('== Abby ==', 75, 20);
+    }; 
+    debugger
+   console.log('dig')
+</script>
+</body>
+</html>

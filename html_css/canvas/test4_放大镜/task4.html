@@ -1,0 +1,112 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas</title>
+    <style type="text/css">
+    body{
+        background: #555;
+    }
+    
+    </style>
+</head>
+<body>
+    <canvas id="canvas" style="border: 1px solid #ccc; display: block; margin: 50px auto;"></canvas>
+    
+    <canvas id="offcanvas" style="display: none;"></canvas>
+<script type="text/javascript">
+    window.onload = function(){
+        myNameSpace.init();  
+    }
+    var myNameSpace = {};
+    myNameSpace.canvas = document.getElementById('canvas');
+    myNameSpace.offcanvas = document.getElementById('offcanvas');
+    // 初始化画布
+    myNameSpace.init = function(){  
+        let canvas = this.canvas;
+        this.context = canvas.getContext('2d');
+        this.offcontext = this.offcanvas.getContext('2d');
+        canvas.width = 640;
+        canvas.height = 360;
+        
+        var picObj = new Image();
+        picObj.onload = function(){
+            myNameSpace.context.drawImage(picObj, 0, 0, canvas.width, canvas.height);
+        };
+        picObj.src = 'pic2.jpg';
+        // 给canvas绑定鼠标事件
+        canvas.onmousedown = myNameSpace.openMagnifier;
+        canvas.onmouseout = canvas.onmouseup = myNameSpace.closeMagnifier;
+
+    };
+    // 获取鼠标在画布上的位置
+    myNameSpace.mousePosition = function(clientX, clientY){
+        var box = this.canvas.getBoundingClientRect();
+        let offsetX = clientX - box.left, offsetY = clientY - box.top;
+        return {x: offsetX, y: offsetY};
+    }
+    // canvas 鼠标按下事件
+    myNameSpace.openMagnifier = function(event){
+        event.preventDefault();
+        let point = myNameSpace.mousePosition(event.clientX, event.clientY);
+        myNameSpace.displayPic(true, point);
+        myNameSpace.canvas.addEventListener('mousemove', myNameSpace.followMagnifier);
+    };
+    // canvas 鼠标在左键按下时移动
+    myNameSpace.followMagnifier = function(event){
+        event.preventDefault();
+        let point = myNameSpace.mousePosition(event.clientX, event.clientY);
+        myNameSpace.displayPic(true, point);
+        console.log(point.x, 'xxx', point.y);
+    }
+    myNameSpace.closeMagnifier = function(event){
+        event.preventDefault();
+        myNameSpace.displayPic(false);
+        myNameSpace.canvas.removeEventListener('mousemove', myNameSpace.followMagnifier);
+    }
+
+    // 
+    myNameSpace.displayPic = function(flag, point){ 
+        let canvas = this.canvas, context = this.context;
+        let offcanvas = this.offcanvas;
+        let picObj = new Image(), r=50, scale;
+        picObj.onload = function(){
+            offcanvas.width = picObj.width;
+            offcanvas.height = picObj.height;
+            scale = picObj.width/canvas.width;
+            myNameSpace.offcontext.drawImage(picObj, 0, 0);
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(picObj, 0, 0, canvas.width, canvas.height);
+            if(flag){
+                context.save();
+                context.beginPath();
+                context.arc(point.x, point.y, r, 0, 2*Math.PI);
+                context.closePath();
+                context.lineWidth = 5;
+                context.strokeStyle = '#f66';
+                context.stroke();
+                context.clip();
+                context.drawImage(offcanvas, point.x*scale-r, point.y*scale-r, point.x+r, point.y+r, point.x-r, point.y-r, point.x+r, point.y+r);
+                context.restore();
+            }
+        }
+        picObj.src = 'pic2.jpg';
+    };
+
+    // 添加水印
+    myNameSpace.drwaWatermark = function(){
+        let watercvs = document.getElementById('watermark');
+        watercvs.width = 150;
+        watercvs.height = 40;
+        let watercxt = watercvs.getContext('2d');
+        watercxt.font = 'bold 20px Arial';
+        watercxt.fillStyle = "rgba(255, 255, 255, 0.5)"
+        watercxt.textBaseline = 'middle';
+        watercxt.textAlign = 'center';
+        watercxt.fillText('== Abby ==', 75, 20);
+    }; 
+    debugger
+   console.log('dig')
+</script>
+</body>
+</html>

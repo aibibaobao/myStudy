@@ -1,0 +1,171 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas</title>
+
+</head>
+<body>
+    <canvas id="can" style="border: 1px solid #ccc; display: block; margin: 50px auto;"></canvas>
+
+<script type="text/javascript" src="js/digit.js"></script>
+<script type="text/javascript">
+    var WINDOW_WIDTH = 1024, WINDOW_HEIGHT = 768, //画布宽高
+        RADIUS = 8, // 小圆点半径
+        MARGIN_LEFT = 30, MARGIN_TOP = 60;// 第一个数字左侧边距和上边距
+    // var endTime = new Date();
+    // endTime.setTime(endTime.getTime() + 3600*1000);
+    var curShowTimeSeconds = getCurrentShowTime();  //所剩倒计时的秒数
+    var balls = []; // 彩色小球
+    var context;
+    window.onload = function(){
+        var can = document.getElementById('can');
+        if(can.getContext('2d')){ // 判断支持canvas
+            context = can.getContext('2d')
+        } else { // 不支持canvas
+            alert('not support canvas')
+        }
+        can.width = WINDOW_WIDTH;
+        can.height = WINDOW_HEIGHT;
+
+        setTimeout(function(){
+            render(context);
+            update();
+        }, 50);
+        
+    }
+    function render(context){
+        context.clearRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT); //把上次绘制的图画抹掉，要不然会叠加绘制
+        // 计算时间
+        var hours = parseInt(curShowTimeSeconds / 3600), 
+            minutes = parseInt((curShowTimeSeconds - hours*3600)/60), 
+            seconds = parseInt(curShowTimeSeconds % 60);
+        
+        renderDigit(MARGIN_LEFT, MARGIN_TOP, parseInt(hours/10), context); //数字需要单个单个绘制
+        renderDigit(MARGIN_LEFT+15*(RADIUS+1), MARGIN_TOP, parseInt(hours%10), context); // 15(RADIUS+1)数字宽度： 数字是10*7数组，每个圆点占用2(R+1)*2(R+1)大小的方格，横向占用7*2(R+1)大小，数字间隔(R+1)距离
+        renderDigit(MARGIN_LEFT+30*(RADIUS+1), MARGIN_TOP, 10, context); // 绘制冒号，10*4，用8(R+1)宽，距离(R+1)
+        renderDigit(MARGIN_LEFT+39*(RADIUS+1), MARGIN_TOP, parseInt(minutes/10), context);
+        renderDigit(MARGIN_LEFT+54*(RADIUS+1), MARGIN_TOP, parseInt(minutes%10), context);
+        renderDigit(MARGIN_LEFT+69*(RADIUS+1), MARGIN_TOP, 10, context);
+        renderDigit(MARGIN_LEFT+78*(RADIUS+1), MARGIN_TOP, parseInt(seconds/10), context);
+        renderDigit(MARGIN_LEFT+93*(RADIUS+1), MARGIN_TOP, parseInt(seconds%10), context);
+        // 画彩色小球
+        for(let i=0; i<balls.length; i++){
+            let ball = balls[i];
+            context.beginPath();
+            context.fillStyle = ball.color;
+            context.arc(ball.x, ball.y, RADIUS, 0, 2*Math.PI);
+            context.closePath();
+            context.fill();
+        }
+    }
+    function renderDigit(x, y, num, context){//x, y绘制的起点，num需绘制的数字
+        context.fillStyle = 'rgb(0, 102, 153)';
+        var numArr = digit[num];
+        for (var i = 0; i < numArr.length; i++) {
+            for(var j = 0; j < numArr[i].length; j++){
+                if(numArr[i][j]){
+                    let centerX = x + (2*j+1)*(RADIUS+1);
+                    let centerY = y + (2*i+1)*(RADIUS+1);
+                    context.beginPath();
+                    context.arc(centerX, centerY, RADIUS, 0, 2*Math.PI);
+                    context.closePath();
+
+                    context.fill();
+                }
+            }   
+        }
+        
+        
+    }
+    function getCurrentShowTime(){
+        var now = new Date();
+        // var ret = Math.round((endTime.getTime() - now.getTime())/1000);
+        // return ret>=0 ? ret : 0;
+        var ret = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds(); // 不能用now.getTime() 返回的是从1970年到现在的毫秒
+        return ret;
+    }
+    function update(){
+
+        var nextShowTime = getCurrentShowTime();
+         
+        if(nextShowTime != curShowTimeSeconds){
+              
+            var hours = parseInt(curShowTimeSeconds / 3600), 
+                minutes = parseInt((curShowTimeSeconds - hours*3600)/60), 
+                seconds = parseInt(curShowTimeSeconds % 60);  
+            var nextHours =parseInt(nextShowTime / 3600),
+                nextMinutes = parseInt((nextShowTime - nextHours*3600)/60),
+                nextSeconds = parseInt(nextShowTime % 60);
+            if(parseInt(nextHours/10) != parseInt(hours/10)){
+                addBall(MARGIN_LEFT, MARGIN_TOP, parseInt(nextHours/10));
+            }
+            if(parseInt(nextHours%10) != parseInt(hours%10)){
+                addBall(MARGIN_LEFT+15*(RADIUS+1), MARGIN_TOP, nextHours%10);
+            }
+            if(parseInt(nextMinutes/10) != parseInt(minutes/10)){
+                addBall(MARGIN_LEFT+39*(RADIUS+1), MARGIN_TOP, parseInt(nextMinutes/10));
+            }
+            if(parseInt(nextMinutes%10) != parseInt(minutes%10)){
+                addBall(MARGIN_LEFT+54*(RADIUS+1), MARGIN_TOP, parseInt(nextMinutes%10));
+            }
+            if(parseInt(nextSeconds/10) != parseInt(seconds/10)){
+                addBall(MARGIN_LEFT+78*(RADIUS+1), MARGIN_TOP, parseInt(nextSeconds/10));
+            }
+            if(parseInt(nextSeconds%10) != seconds%10){
+                addBall(MARGIN_LEFT+93*(RADIUS+1), MARGIN_TOP, nextSeconds%10);
+            }
+            curShowTimeSeconds = nextShowTime;
+        }
+
+        // 更新小球操作
+        var ballLen = balls.length;
+        for (var i = 0; i < ballLen; i++) {
+            var ball = balls[i];
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+            ball.vy += ball.g;
+            if(ball.y > WINDOW_HEIGHT - RADIUS){
+                ball.vy = - ball.vy*0.7;
+                ball.y = WINDOW_HEIGHT-RADIUS;
+            }
+        }
+        var cnt=0;
+        for (var i = 0; i < balls.length; i++) {
+            if(balls[i].x+RADIUS>0 && balls[i].x-RADIUS<WINDOW_WIDTH){
+                balls[cnt++] = balls[i];
+            }
+        }
+        while(balls.length>cnt){
+            balls.pop();
+        }
+        setTimeout(function(){
+            render(context);
+            update();
+        }, 50);
+    }
+    var colors = ['#FFCC99', '#336699', '#FF9900', '#0099CC', '#6666CC', '#CC9999', '#FF9966', '#669933','#FF99CC', '#CC0033', '#CCCCFF', '#FF9999', '#CC99CC', '#99CCCC'];
+    function addBall(x, y, num){
+        var numArr = digit[num];
+        var ball, colorLen = colors.length;
+        for (var i = 0; i < numArr.length; i++) {
+            for(var j = 0; j < numArr[i].length; j++){
+                if(numArr[i][j]){
+                    ball = {x : x + (2*j+1)*(RADIUS+1), 
+                        y : y + (2*i+1)*(RADIUS+1),
+                        vx : (Math.random()>0.5?1:-1)*4,
+                        vy : -2,
+                        g : 1.5+Math.random(),
+                        color : colors[Math.floor(Math.random()*colorLen)]
+                    };
+                    // if(balls.length<=1){
+                        balls.push(ball);
+                    // }
+                    
+                }
+            }   
+        }
+    }
+</script>
+</body>
+</html>

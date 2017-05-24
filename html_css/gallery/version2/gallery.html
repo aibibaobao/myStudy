@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title></title>
+<link rel="stylesheet" type="text/css" href="reset.css">
+<link rel="stylesheet" type="text/css" href="animate.css">
+<style>
+#container{
+	column-count: 4;
+	column-gap: 2px;
+}
+li{
+	/*float: left;
+	width: 100px;*/
+	height: 100px;
+	overflow: hidden;
+}
+.large{
+	display: none;
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color: #000;
+}
+</style>
+</head>
+<body>
+    <ul class="img-container" id="container">
+    </ul>
+    <!-- 查看大图 -->
+	  <div class="large" id="large_container">
+	  	<img id="large_img">
+	  </div>
+<script type="text/javascript" src="zepto.min.js"></script>
+<script>
+var total = 17;
+var render = function(){
+	var winWidth = window.innerWidth;
+	var padding = 2;
+	var picWidth = Math.floor((winWidth-3*padding)/4);
+	var str = "";
+	for (var i = 1; i <= total; i++) {
+		// var pl = padding;
+		// if (i%4 == 0) {
+		// 	pl = 0;
+		// }
+		// str += "<li class='animated bounceIn' data-id='"+i+"' style='width:"+picWidth+"px; padding-top: "+padding+"px; padding-right: "+ pl +"px'><canvas id='cvs_"+i+"'></canvas></li>";
+
+		str += "<li class='animated bounceIn' data-id='"+i+"'><canvas id='cvs_"+i+"'></canvas></li>";
+		var imgObj = new Image();
+		imgObj.index = i;
+		imgObj.onload = function(){
+			var cvs = document.getElementById("cvs_"+this.index).getContext('2d');
+			cvs.width = this.width;
+			cvs.height = this.height;
+			cvs.drawImage(this,0,0);
+		}
+		imgObj.src = "img/"+i+".jpg";
+	}
+	document.getElementById("container").innerHTML = str;
+}
+var lImg = $('#large_img');
+var domImg = lImg[0];
+var loadImg = function(id, callback){ // 加大图左滑右滑动画效果
+	$('#large_container').show();
+	var imgSrc = "img/"+id+".large.jpg";
+	var imgObj = new Image();
+	imgObj.onload = function(){
+		var w = this.width, h = this.height;
+		var winHeight = $(window).height(), winWidth = $(window).width();
+		
+		lImg.attr('src', imgSrc);
+		lImg.css('height','auto').css('width','auto').css('padding','auto');
+		if(h/w > 1.2){ 
+			lImg.css('height', winHeight).css('padding-left', parseInt((winWidth-winHeight*w/h)/2));
+		} else {
+			lImg.css('width', winWidth).css('padding-top', parseInt((winHeight-winWidth*h/w)/2));
+		}
+		callback&&callback();
+	}
+	imgObj.src = imgSrc;
+}
+var cid;
+window.onload = function(){
+	render();
+	$("#container").delegate('li', 'tap', function(){
+		var _id = cid = $(this).attr('data-id');
+		loadImg(_id);
+	});
+	$('#large_container').tap(function(){
+		$(this).hide();
+	}).swipeLeft(function(){
+		cid++;
+		if(cid>total){
+			cid = total;
+		}else{
+			loadImg(cid, function(){
+				domImg.addEventListener('webkitAnimationEnd',function(){ //动画结束时，移除img标签上的class,否则下次叠加两次class，就没有效果
+					lImg.removeClass('animated bounceInRight');
+					domImg.removeEventListener('webkitAnimationEnd');
+				},false);
+				lImg.addClass("animated bounceInRight");
+			});
+		}
+	}).swipeRight(function(){
+		cid--;
+		if(cid<1){
+			cid = 1;
+		}else{
+			loadImg(cid,function(){
+				domImg.addEventListener('webkitAnimationEnd',function(){ //动画结束时，移除img标签上的class,否则下次叠加两次class，就没有效果
+					lImg.removeClass('animated bounceInLeft');
+					domImg.removeEventListener('webkitAnimationEnd');
+				},false);
+				lImg.addClass("animated bounceInLeft");
+			});
+		}
+	});
+}
+</script>
+</body>
+
+</html>

@@ -1,0 +1,31 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas</title>
+    <link rel="stylesheet" type="text/css" href="css/reset.css">
+    <link rel="stylesheet" type="text/css" href="css/handwrite.css">
+</head>
+<body>
+   
+    <canvas id="canvas"></canvas>
+    <div id="container">
+        <input type="button" class="clear-btn" value="清除">
+       <div class="color-choose color-has-choosed" ></div>
+       <div class="color-choose"></div>
+       <div class="color-choose"></div>
+       <div class="color-choose"></div>
+       <div class="color-choose"></div>
+       <div class="color-choose"></div>
+
+    </div>
+<script type="text/javascript" src="js/jquery.min-2.1.4.js"></script>
+<script type="text/javascript" src="js/handwrite.js"></script>
+<script type="text/javascript">
+    (function () {
+        myNameSpace.init();
+        myNameSpace.drawDashGrid();
+    })();
+</script>
+</body>
+</html>

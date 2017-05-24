@@ -1,0 +1,166 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas</title>
+    <style type="text/css">
+    body{
+        background: #555;
+    }
+    #scale-controller{
+        display: block;
+        width: 400px; 
+        margin: 20px auto;
+    }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" style="border: 1px solid #ccc; display: block; margin: 50px auto; cursor:move"></canvas>
+    <input type="range" max='3' min="0.5" step="0.01" value="1" id='scale-controller'>
+    <canvas id="watermark" style="display: none;"></canvas>
+    <canvas id="offcanvas"></canvas>
+<script type="text/javascript">
+    window.onload = function(){
+        myNameSpace.init();  
+    }
+    var myNameSpace = {drag:{}};
+    myNameSpace.canvas = document.getElementById('canvas');
+
+
+    // 初始化画布
+    myNameSpace.init = function(){  
+        let canvas = this.canvas;
+        this.context = canvas.getContext('2d');
+        canvas.width = 450;
+        canvas.height = 300;
+
+        let slider = this.slider = document.getElementById('scale-controller');
+        // 滑动杆鼠标按下时，绑定鼠标移动事件，释放时，移除事件，降低消耗
+        slider.onmousedown = function(){ 
+            slider.addEventListener('mousemove', myNameSpace.sliderMove);
+        }
+        slider.onmouseup = function(){
+            slider.removeEventListener('mousemove', myNameSpace.sliderMove);
+        } 
+        this.displayPic(slider.value);
+        // 添加水印
+        myNameSpace.drwaWatermark();
+        this.drag.isDragCanvas = false;
+        // 给canvas绑定鼠标事件
+        canvas.addEventListener('mousedown', function(event){
+            console.log('mousedown', event.button)
+            if(event.button == 0) myNameSpace.beginDrag(event);
+        });
+        document.addEventListener('mouseup', function(){
+            if (event.button == 0 && myNameSpace.drag.isDragCanvas) myNameSpace.endDrag(event);
+        });
+
+    };
+    // 获取鼠标在画布上的位置
+    myNameSpace.mousePosition = function(clientX, clientY){
+        var box = this.canvas.getBoundingClientRect();
+        let offsetX = clientX - box.left, offsetY = clientY - box.top;
+        return {x: offsetX, y: offsetY};
+    }
+    // canvas 鼠标按下事件
+    myNameSpace.beginDrag = function(event){
+        console.log('beginDrag', myNameSpace.slider.value)
+        if (myNameSpace.slider.value == 1) return; // 没有任何缩放，拖拽无效果
+        
+        event.preventDefault();
+        myNameSpace.drag.isDragCanvas = true; // 进入拖拽状态
+        myNameSpace.drag.lastPoint = {x: event.clientX, y: event.clientY}
+        document.addEventListener('mousemove', myNameSpace.movePic);
+    };
+    // canvas 鼠标在左键按下时移动
+    myNameSpace.movePic = function(event){
+        if(event.button == 0 && myNameSpace.drag.isDragCanvas){
+            event.preventDefault();
+            let point = {x: event.clientX, y: event.clientY};
+            myNameSpace.dragPic(point); // 拖拽重绘画布
+            myNameSpace.drag.lastPoint = point;
+        }
+    }
+    myNameSpace.endDrag = function(event){
+        event.preventDefault();
+        myNameSpace.drag.isDragCanvas = false;
+        document.removeEventListener('mousemove', myNameSpace.movePic);
+    }
+    // 处理滑动杆值变
+    myNameSpace.sliderMove = function(){  
+        myNameSpace.displayPic(myNameSpace.slider.value);
+    }
+    // 拖拽重绘画布
+    myNameSpace.dragPic = function(point){
+        let xDrag = point.x - myNameSpace.drag.lastPoint.x, yDrag = point.y - myNameSpace.drag.lastPoint.y;
+        //在上一次基础上没有移动
+        if(xDrag == 0 && yDrag == 0) return;
+        let left, top, canvas = myNameSpace.canvas, scale = myNameSpace.slider.value;
+        if (scale > 1) { // 图像放大时
+            // x: [canvas.width-img.width, 0] y:[canvas.height-img.height, 0]
+            left = myNameSpace.lOffset + xDrag ;
+            left = left < canvas.width*(1-scale) ? canvas.width*(1-scale) : left;
+            left = left > 0 ? 0 : left;
+
+            top = myNameSpace.tOffset + yDrag;
+            top = top < canvas.height*(1-scale) ? canvas.height*(1-scale) : top;
+            top = top > 0 ? 0 : top;
+        } else {
+            // x:[0, canvas.width-img.width] y:[0, canvas.height-img.height]
+            left = myNameSpace.lOffset + xDrag ;
+            left = left < 0 ? 0 : left;
+            left = left > canvas.width*(1-scale) ? canvas.width*(1-scale) : left;
+
+            top = myNameSpace.tOffset + yDrag;
+            top = top < 0 ? 0 : top;
+            top = top > canvas.height*(1-scale) ? canvas.height*(1-scale) : top;
+        }
+        myNameSpace.tOffset = top;
+        myNameSpace.lOffset = left;
+
+        var picObj = new Image();
+        var waterCanvas = document.getElementById('watermark');
+        picObj.onload = function(){
+            let context = myNameSpace.context;
+            let picWid = picObj.width*scale, picHei = picObj.height*scale;
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(picObj, left, top, scale*canvas.width, scale*canvas.height);
+
+            context.drawImage(waterCanvas, canvas.width-waterCanvas.width, canvas.height - waterCanvas.height);
+        }
+        picObj.src = 'pic1.jpg';
+    }
+    // 根据当前slider值，改变图片放大的效果
+    myNameSpace.displayPic = function(scale){ 
+        let canvas = this.canvas, context = this.context;
+        
+        var picObj = new Image();
+        var waterCanvas = document.getElementById('watermark');
+        picObj.onload = function(){
+            let picWid = picObj.width*scale, picHei = picObj.height*scale;
+            let sx = myNameSpace.lOffset = (canvas.width - picWid)/2, sy = myNameSpace.tOffset = (canvas.height - picHei)/2;
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(picObj, sx, sy, scale*canvas.width, scale*canvas.height);
+
+            context.drawImage(waterCanvas, canvas.width-waterCanvas.width, canvas.height - waterCanvas.height);
+        }
+        picObj.src = 'pic1.jpg';
+    };
+
+    // 添加水印
+    myNameSpace.drwaWatermark = function(){
+        let watercvs = document.getElementById('watermark');
+        watercvs.width = 150;
+        watercvs.height = 40;
+        let watercxt = watercvs.getContext('2d');
+        watercxt.font = 'bold 20px Arial';
+        watercxt.fillStyle = "rgba(255, 255, 255, 0.5)"
+        watercxt.textBaseline = 'middle';
+        watercxt.textAlign = 'center';
+        watercxt.fillText('== Abby ==', 75, 20);
+    }; 
+    debugger
+   console.log('dig')
+</script>
+</body>
+</html>

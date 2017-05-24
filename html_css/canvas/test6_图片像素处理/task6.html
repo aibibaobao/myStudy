@@ -1,0 +1,180 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas</title>
+    <style type="text/css">
+    body{
+        background: #555;
+        padding: 50px;
+    }
+    a.change{
+        text-decoration: none;
+        color: #fff;
+    }
+    canvas{
+        border: 1px solid #ccc; 
+        display: inline-block;
+    }
+    #rightcanvas{
+        margin-left: 50px;
+    }
+    div.operation>a{
+        display: inline-block;
+        padding: 0 10px;
+    }
+    </style>
+</head>
+<body>
+    <canvas id="leftcanvas" ></canvas>
+    <canvas id="rightcanvas" ></canvas>
+    <div class="operation" style="margin: 50px auto; text-align: center;">
+        <a class="change" href="javascript: myNameSpace.greyEffect()">greyEffect</a>
+        <a class="change" href="javascript: myNameSpace.blackEffect()">blackEffect</a>
+        <a class="change" href="javascript: myNameSpace.reverseEffect()">reverseEffect</a>
+        <a class="change" href="javascript: myNameSpace.blurEffect(3)">blurEffect</a>
+        <a class="change" href="javascript: myNameSpace.mosaicEffect(5)">mosaicEffect</a>
+    </div>
+<script type="text/javascript">
+    var myNameSpace = {};
+    window.onload = function(){
+        myNameSpace.init();  
+    }
+    myNameSpace.init = function(){
+        let leftcanvas = this.leftcanvas = document.getElementById('leftcanvas');
+        myNameSpace.leftcontext = leftcanvas.getContext('2d');
+        let rightcanvas = this.rightcanvas = document.getElementById('rightcanvas');
+        myNameSpace.rightcontext = rightcanvas.getContext('2d');
+        leftcanvas.width = rightcanvas.width = 640;
+        leftcanvas.height = rightcanvas.height = 360;
+        let left = (document.body.clientWidth - leftcanvas.width*2 - 50)/2
+        document.body.style.paddingLeft = parseInt(left-8)+'px';
+        document.body.style.paddingRight = parseInt(left-8)+'px';
+        let picObj = new Image();
+        picObj.onload = function(){
+            
+            myNameSpace.leftcontext.drawImage(picObj, 0, 0, leftcanvas.width, leftcanvas.height);
+        }
+        picObj.src = 'pic2.jpg';
+    }
+    // 马赛克
+    myNameSpace.mosaicEffect = function(size){
+        size = size || 2;
+        let imgdata =  myNameSpace.leftcontext.getImageData(0, 0, myNameSpace.leftcanvas.width, myNameSpace.leftcanvas.height);
+        let data = imgdata.data, copyData = myNameSpace.leftcontext.getImageData(0, 0, myNameSpace.leftcanvas.width, myNameSpace.leftcanvas.height).data;
+        let k, ramount, gamount, bamount, pointNum = size*size;
+        
+        // 底部和右边边缘部分可能没处理到
+        for(let i = 0; i < imgdata.height-size; i+=size) {
+            for (let j = 0; j < imgdata.width-size; j+=size) {
+               // k = i * imgdata.width + j; // 当前计算的中心点
+                ramount = gamount = bamount = 0;
+                for(let m = i; m <= i+size; m++) {
+                    for(let n = j; n <= j+size; n++) {
+                        let l = m * imgdata.width + n;
+                        ramount += copyData[l*4+0];
+                        gamount += copyData[l*4+1];
+                        bamount += copyData[l*4+2];
+                    }
+                }
+                let r = ramount/pointNum, g = gamount/pointNum, b = bamount/pointNum;
+                for(let m = i; m <= i+size; m++) {
+                    for(let n = j; n <= j+size; n++) {
+                        let k = m * imgdata.width + n;
+                        data[4*k+0] = r;
+                        data[4*k+1] = g;
+                        data[4*k+2] = b;
+                    }
+                } 
+            }
+        }
+        myNameSpace.rightcontext.clearRect(0, 0, myNameSpace.rightcanvas.width, myNameSpace.rightcanvas.height);
+        myNameSpace.rightcontext.putImageData(imgdata, 0, 0, 0, 0, myNameSpace.rightcanvas.width, myNameSpace.rightcanvas.height);
+    }
+    // 模糊
+    myNameSpace.blurEffect = function(blurR){
+        blurR = blurR || 1;
+        let imgdata =  myNameSpace.leftcontext.getImageData(0, 0, myNameSpace.leftcanvas.width, myNameSpace.leftcanvas.height);
+        let data = imgdata.data, copyData = myNameSpace.leftcontext.getImageData(0, 0, myNameSpace.leftcanvas.width, myNameSpace.leftcanvas.height).data;
+        let k, ramount, gamount, bamount, pointNum = (2*blurR+1)*(2*blurR+1);
+        
+        for(let i = blurR; i < imgdata.height-blurR; i++) {
+            for (let j = blurR; j < imgdata.width-blurR; j++) {
+                k = i * imgdata.width + j; // 当前计算的中心点
+                ramount = gamount = bamount = 0;
+                for(let m = i-blurR; m <= i+blurR; m++) {
+                    for(let n = j-blurR; n <= j+blurR; n++) {
+                        let l = m * imgdata.width + n;
+                        ramount += copyData[l*4+0];
+                        gamount += copyData[l*4+1];
+                        bamount += copyData[l*4+2];
+                    }
+                }
+                data[4*k+0] = ramount/pointNum;
+                data[4*k+1] = gamount/pointNum;
+                data[4*k+2] = bamount/pointNum;
+            }
+        }
+        myNameSpace.rightcontext.clearRect(0, 0, myNameSpace.rightcanvas.width, myNameSpace.rightcanvas.height);
+        myNameSpace.rightcontext.putImageData(imgdata, 0, 0, 0, 0, myNameSpace.rightcanvas.width, myNameSpace.rightcanvas.height);
+    }
+
+    // 反色
+    myNameSpace.reverseEffect = function(){
+        let imgdata =  myNameSpace.leftcontext.getImageData(0, 0, myNameSpace.leftcanvas.width, myNameSpace.leftcanvas.height);
+        let data = imgdata.data;
+        let k;
+        for(let i = 0; i < imgdata.height; i++) {
+            for (var j = 0; j < imgdata.width; j++) {
+                k = i * imgdata.width + j;
+                data[4*k+0] = 255 - data[4*k+0];
+                data[4*k+1] = 255 - data[4*k+1];
+                data[4*k+2] = 255 - data[4*k+2];
+            }
+        }
+        myNameSpace.rightcontext.clearRect(0, 0, myNameSpace.rightcanvas.width, myNameSpace.rightcontext.height);
+        myNameSpace.rightcontext.putImageData(imgdata, 0, 0, 0, 0, myNameSpace.rightcanvas.width, myNameSpace.rightcanvas.height);
+    }
+
+    // 黑白
+    myNameSpace.blackEffect = function(){
+        let imgdata =  myNameSpace.leftcontext.getImageData(0, 0, myNameSpace.leftcanvas.width, myNameSpace.leftcanvas.height);
+        let data = imgdata.data;
+        let r, g, b, a, k, grey;
+        for(let i = 0; i < imgdata.height; i++) {
+            for (var j = 0; j < imgdata.width; j++) {
+                k = i * imgdata.width + j;
+                r = data[4*k+0];
+                g = data[4*k+1];
+                b = data[4*k+2];
+                grey = (0.3*r + 0.59*g + 0.11*b) > 255/2 ? 255 : 0;
+                data[4*k+0] = data[4*k+1] = data[4*k+2] = grey;
+            }
+        }
+        myNameSpace.rightcontext.clearRect(0, 0, myNameSpace.rightcanvas.width, myNameSpace.rightcontext.height);
+        myNameSpace.rightcontext.putImageData(imgdata, 0, 0)
+    }
+
+    // 灰度
+    myNameSpace.greyEffect = function(){
+        let imgdata =  myNameSpace.leftcontext.getImageData(0, 0, myNameSpace.leftcanvas.width, myNameSpace.leftcanvas.height);
+        let data = imgdata.data;
+        let r, g, b, a, k, grey;
+        for(let i = 0; i < imgdata.height; i++) {
+            for (var j = 0; j < imgdata.width; j++) {
+                k = i * imgdata.width + j;
+                r = data[4*k+0];
+                g = data[4*k+1];
+                b = data[4*k+2];
+                grey = 0.3*r + 0.59*g + 0.11*b;
+                data[4*k+0] = data[4*k+1] = data[4*k+2] = grey;
+            }
+        }
+        myNameSpace.rightcontext.clearRect(0, 0, myNameSpace.rightcanvas.width, myNameSpace.rightcontext.height);
+        myNameSpace.rightcontext.putImageData(imgdata, 0, 0)
+    }
+
+   console.log('dig')
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>星星闪烁特效</title>
+    <link rel="stylesheet" type="text/css" href="style/reset.css">
+    <link rel="stylesheet" type="text/css" href="style/starGirl.css">
+</head>
+<body>
+   <div>
+     <canvas id="canvas" style="border: 1px solid #ccc;"></canvas>
+   </div>
+   <div id='test'></div>
+   <script type="text/javascript" src="js/starGirl.js"></script>
+   <script type="text/javascript" src="js/stars.js"></script>
+   <script type="text/javascript">
+    document.body.onload = function(){
+      myNamespace.init();
+    }
+   </script>
+</body>
+</html>

@@ -32,6 +32,7 @@ starObj.prototype.update = function(){
 		this.imgNo = (++this.imgNo)%7;
 		this.timer = 0;
 	}
+	// 改变速度
 	this.x += this.vx;
 	this.y += this.vy;
 	if (this.x < this.minX || this.x > this.maxX-7 || this.y < this.minY || this.y > this.maxY-7) {

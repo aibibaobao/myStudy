@@ -446,6 +446,7 @@
       else document.addEventListener('DOMContentLoaded', function(){ callback($) }, false)
       return this
     },
+    // 获取idx下标元素，idx没有就返回整个数组，有就返回某个元素值
     get: function(idx){
       return idx === undefined ? slice.call(this) : this[idx >= 0 ? idx : idx + this.length]
     },

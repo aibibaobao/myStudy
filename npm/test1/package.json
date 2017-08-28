@@ -6,9 +6,14 @@
   "scripts": {
     "test": "node test.js"
   },
-  "author": "",
+  "author": "aibi",
   "license": "ISC",
   "dependencies": {
     "@linclark/pkg": "^1.0.3"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aibibaobao/myStudy/tree/master/npm/test1"
   }
 }
